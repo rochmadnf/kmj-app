@@ -9,6 +9,7 @@ Route::get('/ping', function () {
 
 Route::controller(Controllers\ScreeningController::class)->group(function () {
     Route::get('/screenings', 'index');
+    Route::get('/screenings/result', 'withResult');
 });
 
 Route::controller(Controllers\CheckUpResultController::class)->group(function () {

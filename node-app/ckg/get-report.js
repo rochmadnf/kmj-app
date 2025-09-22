@@ -13,9 +13,12 @@ const getArgs = () =>
 
 async function setToDB(result) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    return fetch("https://big-app.test/api/check-up", {
+    return fetch("http://127.0.0.1:8000/api/check-up", {
         method: "POST",
-        headers: { "Content-Type": "application/json", 'Accept': 'application/json' },
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
         body: result,
     });
 }
@@ -30,7 +33,9 @@ async function injectCryptoLoader(page, moduleUrl = "/_nuxt/CB4h-W_t.js") {
                 try {
                     return await import(url);
                 } catch {
-                    const txt = await fetch(url, { credentials: "same-origin" }).then((r) => {
+                    const txt = await fetch(url, {
+                        credentials: "same-origin",
+                    }).then((r) => {
                         if (!r.ok) throw new Error("Fetch failed: " + r.status);
                         return r.text();
                     });
@@ -50,7 +55,8 @@ async function injectCryptoLoader(page, moduleUrl = "/_nuxt/CB4h-W_t.js") {
                 }
                 if (mod.default && typeof mod.default === "object") {
                     for (const k of candidates) {
-                        if (typeof mod.default[k] === "function") return mod.default[k];
+                        if (typeof mod.default[k] === "function")
+                            return mod.default[k];
                     }
                 }
                 for (const key of Object.keys(mod)) {
@@ -59,7 +65,8 @@ async function injectCryptoLoader(page, moduleUrl = "/_nuxt/CB4h-W_t.js") {
                             const maybe = mod[key]();
                             if (
                                 (maybe && typeof maybe.then === "function") ||
-                                (maybe && typeof maybe === "object" &&
+                                (maybe &&
+                                    typeof maybe === "object" &&
                                     ("encrypt" in maybe || "decrypt" in maybe))
                             ) {
                                 return mod[key];
@@ -75,7 +82,8 @@ async function injectCryptoLoader(page, moduleUrl = "/_nuxt/CB4h-W_t.js") {
             try {
                 importModule(moduleUrl).then((mod) => {
                     const factoryFn = resolveFactory(mod);
-                    if (!factoryFn) return console.error("Crypto factory not found");
+                    if (!factoryFn)
+                        return console.error("Crypto factory not found");
 
                     window.ctkCrypto = factoryFn();
                     console.log("✅ ctkCrypto loaded!");
@@ -95,7 +103,8 @@ async function decryptRaporForKey(page, key) {
         let done = false;
 
         const onResponse = async (response) => {
-            if (!response.url().includes("/api/rapor/detail-rapor-ckg-sekolah")) return;
+            if (!response.url().includes("/api/rapor/detail-rapor-ckg-sekolah"))
+                return;
 
             try {
                 const json = await response.json();
@@ -103,7 +112,10 @@ async function decryptRaporForKey(page, key) {
                 // console.log(`[${key}] Encrypted sample:`, encrypted.slice(0, 80) + "...");
 
                 const decrypted = await page.evaluate(async (enc) => {
-                    if (!window.ctkCrypto || typeof window.ctkCrypto.decrypt !== "function") {
+                    if (
+                        !window.ctkCrypto ||
+                        typeof window.ctkCrypto.decrypt !== "function"
+                    ) {
                         throw new Error("ctkCrypto.decrypt belum siap");
                     }
                     return window.ctkCrypto.decrypt(enc);
@@ -118,7 +130,9 @@ async function decryptRaporForKey(page, key) {
                 }
 
                 try {
-                    const dbResponse = await setToDB(JSON.stringify(parsed, null, 2));
+                    const dbResponse = await setToDB(
+                        JSON.stringify(parsed, null, 2)
+                    );
 
                     if (dbResponse.status === 201) {
                         console.log("✅ Result berhasil disimpan");
@@ -126,11 +140,12 @@ async function decryptRaporForKey(page, key) {
                         console.log("🔁 Data sudah tersedia");
                     }
                 } catch (err) {
-                    console.error("❌ Terjadi error saat simpan result:", err.message);
+                    console.error(
+                        "❌ Terjadi error saat simpan result:",
+                        err.message
+                    );
                     if (err.stack) console.error(err.stack);
                 }
-
-
 
                 if (!done) {
                     done = true;
@@ -167,19 +182,20 @@ async function main() {
     await injectCryptoLoader(page);
 
     try {
-        const screenings = await fetch("https://big-app.test/api/screenings").then((res) => res.json());
+        const screenings = await fetch(
+            "http://127.0.0.1:8000/api/screenings"
+        ).then((res) => res.json());
 
-        if(screenings.data.length > 0){
+        if (screenings.data.length > 0) {
             const keys = screenings.data.map((s) => s.token_report);
             for (let i = 0; i < keys.length; i++) {
                 console.log(`➡️ Data ke-${i + 1}`);
                 await decryptRaporForKey(page, keys[i]);
                 console.log("\n\n");
             }
-        }else {
+        } else {
             console.log("Tidak ada data.");
         }
-
     } catch (err) {
         console.error("Error:", err);
     } finally {

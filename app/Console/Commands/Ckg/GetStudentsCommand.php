@@ -102,9 +102,11 @@ class GetStudentsCommand extends Command
 
         $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $selectedClass['code'], $totalStudent);
         if (isset($students)) {
+            $this->info("🧮 Total Siswa Selesai: " . $totalStudent);
+            $c = 1;
 
             foreach ($students['data'] as $student) {
-                $this->info("➡️ {$student['patient']['full_name']} - NIK: {$student['patient']['nik']}");
+                $this->info("➡️ {$c}. {$student['patient']['full_name']} - NIK: {$student['patient']['nik']}");
 
                 $patient = $this->setPatient($student);
 
@@ -113,6 +115,7 @@ class GetStudentsCommand extends Command
                 } else {
                     $this->info("🔁 Skip. Data tidak lengkap.");
                 }
+                $c++;
                 $this->newLine(1);
             }
         }
