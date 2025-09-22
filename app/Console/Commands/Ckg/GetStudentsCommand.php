@@ -154,50 +154,51 @@ class GetStudentsCommand extends Command
 
     public function setScreening(array $data)
     {
+        if (Screening::where('register_id', $data['reg_id'])->exists()) {
+            $this->warn("🔁 Skip. Screening tersedia.");
+            return;
+        } else {
 
 
-        $headers = ['Referer' => 'https://sehatindonesiaku.kemkes.go.id/ckg-pelayanan-sekolah'];
 
-        // 1. Encrypt dulu datanya agar dapat token encrypt
-        $encryptRes = $this->satuSehatHelper->fetchPostUrl(
-            "https://sehatindonesiaku.kemkes.go.id/encrypt",
-            [
-                "data" => json_encode([
-                    'regId ' => $data['reg_id'],
-                    'schoolCode' => $data['schoolCode'],
-                    'classCode' => $data['classCode'],
-                ])
-            ],
-            $headers
-        )->json();
+            $headers = ['Referer' => 'https://sehatindonesiaku.kemkes.go.id/ckg-pelayanan-sekolah'];
 
-        // 2. Set header referer ke detail pemeriksaan dengan token encrypt
-        $headers['Referer'] .= '/detail-pemeriksaan?q=' . $encryptRes['token_encrypt'];
+            // 1. Encrypt dulu datanya agar dapat token encrypt
+            $encryptRes = $this->satuSehatHelper->fetchPostUrl(
+                "https://sehatindonesiaku.kemkes.go.id/encrypt",
+                [
+                    "data" => json_encode([
+                        'regId ' => $data['reg_id'],
+                        'schoolCode' => $data['schoolCode'],
+                        'classCode' => $data['classCode'],
+                    ])
+                ],
+                $headers
+            )->json();
 
-        // 3. Dectrypt token encrypt untuk mendapatkan token decrypt
-        $dectryptRes = $this->satuSehatHelper->fetchPostUrl(
-            "https://sehatindonesiaku.kemkes.go.id/decrypt",
-            [
-                "data" => $encryptRes['token_encrypt']
-            ],
-            $headers
-        )->json();
+            // 2. Set header referer ke detail pemeriksaan dengan token encrypt
+            $headers['Referer'] .= '/detail-pemeriksaan?q=' . $encryptRes['token_encrypt'];
 
-        // 4. Fetch data screening dengan token decrypt
-        $fetchScreening = $this->satuSehatHelper->fetchPostUrl(
-            "https://sehatindonesiaku.kemkes.go.id/api/pkg/anak-sekolah/get-screening",
-            collect(json_decode($dectryptRes['token_decrypt'], true))->mapWithKeys(function ($value, $key) {
-                return [Str::snake($key) => $value];
-            })->toArray(),
-            $headers
-        )->json();
+            // 3. Dectrypt token encrypt untuk mendapatkan token decrypt
+            $dectryptRes = $this->satuSehatHelper->fetchPostUrl(
+                "https://sehatindonesiaku.kemkes.go.id/decrypt",
+                [
+                    "data" => $encryptRes['token_encrypt']
+                ],
+                $headers
+            )->json();
 
-        if ((int) $fetchScreening['statusCode'] === 200) {
-            $s_d = $fetchScreening['data'];
-            if (Screening::where('register_id', $data['reg_id'])->exists()) {
-                $this->warn("🔁 Skip. Screening tersedia.");
-                return;
-            } else {
+            // 4. Fetch data screening dengan token decrypt
+            $fetchScreening = $this->satuSehatHelper->fetchPostUrl(
+                "https://sehatindonesiaku.kemkes.go.id/api/pkg/anak-sekolah/get-screening",
+                collect(json_decode($dectryptRes['token_decrypt'], true))->mapWithKeys(function ($value, $key) {
+                    return [Str::snake($key) => $value];
+                })->toArray(),
+                $headers
+            )->json();
+
+            if ((int) $fetchScreening['statusCode'] === 200) {
+                $s_d = $fetchScreening['data'];
                 Screening::create([
                     'register_id' => $data['reg_id'],
                     'register_date' => $data['register_date'],
