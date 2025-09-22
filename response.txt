@@ -1,0 +1,10 @@
+- Nama
+- NIK
+- Umur
+- Tanggal Lahir
+- Jenis Kelamin
+- Asal Sekolah
+- Jenjang Sekolah
+- Kelas
+- Kelas Klaster
+- Hasil Pemeriksaan
