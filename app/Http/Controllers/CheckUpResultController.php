@@ -21,7 +21,7 @@ class CheckUpResultController extends Controller
         if (is_null($cur)) {
             CheckUpResult::create([
                 'screening_id' => $sc->id,
-                'results' => is_null($data['data']['rapor_kesehatan']['hasil_pemeriksaan']) ? [] : $data['data']['rapor_kesehatan']['hasil_pemeriksaan']
+                'results' => is_null($data['data']['rapor_kesehatan']['hasil_pemeriksaan']) ? ['hasil_pemeriksaan' => null] : $data['data']['rapor_kesehatan']['hasil_pemeriksaan']
             ]);
             $isCreated = true;
         }
@@ -32,7 +32,12 @@ class CheckUpResultController extends Controller
 
     public function index()
     {
-        $cur = CheckUpResult::with('screening', 'screening.patient')->whereRaw('JSON_LENGTH(results) = 0')->get();
+        // $cur = CheckUpResult::with('screening', 'screening.patient')->whereRaw('JSON_LENGTH(results) = 0')->get();
+        $cur = CheckUpResult::with('screening', 'screening.patient')->whereRaw("JSON_CONTAINS(results, 'null', '$.hasil_pemeriksaan')")
+            ->get();
+        // ->update(['results' => ['hasil_pemeriksaan' => null]]);
+
+
 
 
         return response()->json(['message' => 'Check Up Results', 'data' => $cur]);
