@@ -130,14 +130,17 @@ async function decryptRaporForKey(page, key) {
                 }
 
                 try {
-                    const dbResponse = await setToDB(
-                        JSON.stringify(parsed, null, 2)
-                    );
+                    const reqBody = JSON.stringify(parsed, null, 2);
+                    console.log(`Result: ${reqBody}`);
+
+                    const dbResponse = await setToDB(reqBody);
 
                     if (dbResponse.status === 201) {
                         console.log("✅ Result berhasil disimpan");
                     } else if (dbResponse.status === 200) {
                         console.log("🔁 Data sudah tersedia");
+                    } else {
+                        console.log(dbResponse);
                     }
                 } catch (err) {
                     console.error(
@@ -174,24 +177,37 @@ async function decryptRaporForKey(page, key) {
 // Main Process
 // ==============================
 async function main() {
+    const args = getArgs();
+
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-
-    await injectCryptoLoader(page);
+    const limit = args.limit ? args.limit : 10;
 
     try {
+        console.log(`Ambil ${limit} data screening`);
+
         const screenings = await fetch(
-            "http://127.0.0.1:8000/api/screenings"
+            "http://127.0.0.1:8000/api/screenings?limit=" + limit
         ).then((res) => res.json());
 
         if (screenings.data.length > 0) {
             const keys = screenings.data.map((s) => s.token_report);
             for (let i = 0; i < keys.length; i++) {
-                console.log(`➡️ Data ke-${i + 1}`);
+                // Open Browser and Open new Page
+                const browser = await puppeteer.launch({ headless: true });
+                const page = await browser.newPage();
+                await injectCryptoLoader(page);
+
+                const item = screenings.data.find(
+                    (d) => d.token_report === keys[i]
+                );
+
+                console.log(`➡️ Data ke-${i + 1}. ${item.patient.name}`);
+
                 await decryptRaporForKey(page, keys[i]);
-                console.log("\n\n");
+                console.log("\n");
+
+                await browser.close();
             }
         } else {
             console.log("Tidak ada data.");
@@ -199,7 +215,7 @@ async function main() {
     } catch (err) {
         console.error("Error:", err);
     } finally {
-        await browser.close();
+        // await browser.close();
     }
 }
 
