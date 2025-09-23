@@ -12,6 +12,7 @@ Route::controller(Controllers\ScreeningController::class)->group(function () {
     Route::get('/screenings/result', 'withResult');
 });
 
-Route::controller(Controllers\CheckUpResultController::class)->group(function () {
-    Route::post('/check-up', 'store');
+Route::prefix('check-up')->controller(Controllers\CheckUpResultController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::post('/', 'store');
 });

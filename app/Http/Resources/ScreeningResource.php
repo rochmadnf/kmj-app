@@ -17,6 +17,7 @@ class ScreeningResource extends JsonResource
         return [
             'id' => $this->id,
             'patient' => [
+                'id' => $this->patient->id,
                 'name' => $this->patient->full_name,
                 'gender' => (int) $this->patient->gender === 0 ? 'PEREMPUAN' : 'LAKI-LAKI',
                 'born_date' => $this->patient->born_date->translatedFormat('d F Y'),
