@@ -33,9 +33,12 @@ class CheckUpResultController extends Controller
     public function index()
     {
         // $cur = CheckUpResult::with('screening', 'screening.patient')->whereRaw('JSON_LENGTH(results) = 0')->get();
-        $cur = CheckUpResult::with('screening', 'screening.patient')->whereRaw("JSON_CONTAINS(results, 'null', '$.hasil_pemeriksaan')")
+        // $cur = CheckUpResult::with('screening', 'screening.patient')->whereRaw("JSON_CONTAINS(results, 'null', '$.hasil_pemeriksaan')")
+        $cur = CheckUpResult::with('screening', 'screening.patient')
             ->get();
         // ->update(['results' => ['hasil_pemeriksaan' => null]]);
+
+
 
 
 
