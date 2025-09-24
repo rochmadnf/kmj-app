@@ -190,6 +190,8 @@ async function main() {
             "http://127.0.0.1:8000/api/screenings?limit=" + limit
         ).then((res) => res.json());
 
+        console.log(`${screenings.data.length} Data akan diproses.`);
+
         if (screenings.data.length > 0) {
             const keys = screenings.data.map((s) => s.token_report);
             for (let i = 0; i < keys.length; i++) {
