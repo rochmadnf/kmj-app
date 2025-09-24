@@ -87,37 +87,48 @@ class GetStudentsCommand extends Command
 
         $schoolClasses = collect($this->getSchoolLevels($selectedSchool["category_short_name"])['data']);
 
-        $selectedClass = $this->choice(
+        $selectedClasses = $this->choice(
             'Pilih Kelas: ',
-            $schoolClasses->map(fn($item) => "{$item['code']} - {$item['name']}")->toArray(),
-            0
+            ['Pilih Semua', ...$schoolClasses->map(fn($item) => "{$item['code']} - {$item['name']}")->toArray()],
+            0,
+            null,
+            true,
         );
 
-        $selectedClass = $schoolClasses->where('code', explode(" - ", $selectedClass)[0])->first();
+        if (in_array('Pilih Semua', $selectedClasses)) {
+            $selectedClasses = $schoolClasses->toArray();
+        } else {
+            $selectedClasses = $schoolClasses->filter(fn($item) => array_filter($selectedClasses, fn($isc) => str_starts_with($isc, $item['code'])))->toArray();
+        }
 
-        $this->info("Kelas: " . $selectedClass['name']);
 
-        // $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $selectedClass['code'], 1)['data'][0];
-        $totalStudent = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $selectedClass['code'], 1)['pagination']['total_data'];
+        foreach ($selectedClasses as $sc) {
+            $this->info("➡️ Kelas: " . $sc['name']);
 
-        $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $selectedClass['code'], $totalStudent);
-        if (isset($students)) {
-            $this->info("🧮 Total Siswa Selesai: " . $totalStudent);
-            $c = 1;
+            // $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $selectedClass['code'], 1)['data'][0];
+            $totalStudent = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $sc['code'], 1)['pagination']['total_data'];
+            $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $sc['code'], $totalStudent);
 
-            foreach ($students['data'] as $student) {
-                $this->info("➡️ {$c}. {$student['patient']['full_name']} - NIK: {$student['patient']['nik']}");
+            if (isset($students)) {
+                $this->info("🧮 Total Siswa Selesai: " . $totalStudent);
+                $c = 1;
 
-                $patient = $this->setPatient($student);
+                foreach ($students['data'] as $student) {
+                    $this->info("➡️ {$c}. {$student['patient']['full_name']} - NIK: {$student['patient']['nik']}");
 
-                if (!empty($patient)) {
-                    $this->setScreening([...$patient, ...['register_date' => $student['register_date'], 'schoolCode' => $selectedSchool['ihs_no'], 'classCode' => $selectedClass['code']]]);
-                } else {
-                    $this->info("🔁 Skip. Data tidak lengkap.");
+                    $patient = $this->setPatient($student);
+
+                    if (!empty($patient)) {
+                        $this->setScreening([...$patient, ...['register_date' => $student['register_date'], 'schoolCode' => $selectedSchool['ihs_no'], 'classCode' => $sc['code']]]);
+                    } else {
+                        $this->info("🔁 Skip. Data tidak lengkap.");
+                    }
+                    $c++;
+                    $this->newLine(1);
                 }
-                $c++;
-                $this->newLine(1);
             }
+
+            $this->newLine(1);
         }
 
         $this->newLine(2);
