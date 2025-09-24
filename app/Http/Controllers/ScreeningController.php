@@ -10,7 +10,7 @@ class ScreeningController extends Controller
     public function index()
     {
         $limit = request()->has('limit') ? request()->get('limit') : 10;
-        
+
         $screenings = Screening::with('patient')->doesntHave('checkUpResult')->limit($limit)->get();
 
         return response()->json(["data" => ScreeningResource::collection($screenings)]);
