@@ -75,62 +75,78 @@ class GetStudentsCommand extends Command
         $schoolBySubType = collect($schoolBySubType['data']);
 
 
-        $selectedSchool = $this->choice(
+        $selectedSchools = $this->choice(
             'Pilih Sekolah: ',
-            $schoolBySubType->map(fn($item) => "{$item['school_name']} - {$item['ihs_no']}")->toArray(),
-            0
-        );
-
-        $selectedSchool = $schoolBySubType->where('ihs_no', explode(" - ", $selectedSchool)[1])->first();
-
-        $this->info("Sekolah: " . $selectedSchool['school_name']);
-
-        $schoolClasses = collect($this->getSchoolLevels($selectedSchool["category_short_name"])['data']);
-
-        $selectedClasses = $this->choice(
-            'Pilih Kelas: ',
-            ['Pilih Semua', ...$schoolClasses->map(fn($item) => "{$item['code']} - {$item['name']}")->toArray()],
+            ['Semua Sekolah', ...$schoolBySubType->map(fn($item) => "{$item['school_name']} - {$item['ihs_no']}")->toArray()],
             0,
             null,
-            true,
+            true
         );
 
-        if (in_array('Pilih Semua', $selectedClasses)) {
-            $selectedClasses = $schoolClasses->toArray();
+        $isAllSchool = false;
+
+        if (in_array('Semua Sekolah', $selectedSchools)) {
+            $selectedSchools = $schoolBySubType->toArray();
+            $isAllSchool = true;
         } else {
-            $selectedClasses = $schoolClasses->filter(fn($item) => array_filter($selectedClasses, fn($isc) => str_starts_with($isc, $item['code'])))->toArray();
+            $selectedSchools = $schoolBySubType->filter(fn($item) => array_filter($selectedSchools, fn($iss) => str_ends_with($iss, $item['ihs_no'])))->toArray();
         }
 
+        foreach ($selectedSchools as $ss) {
+            $this->info("Sekolah: " . $ss['school_name']);
 
-        foreach ($selectedClasses as $sc) {
-            $this->info("➡️ Kelas: " . $sc['name']);
 
-            // $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $selectedClass['code'], 1)['data'][0];
-            $totalStudent = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $sc['code'], 1)['pagination']['total_data'];
-            $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $sc['code'], $totalStudent);
 
-            if (isset($students)) {
-                $this->info("🧮 Total Siswa Selesai: " . $totalStudent);
-                $c = 1;
+            $schoolClasses = collect($this->getSchoolLevels($ss["category_short_name"])['data']);
+            $selectedClasses = [];
 
-                foreach ($students['data'] as $student) {
-                    $this->info("➡️ {$c}. {$student['patient']['full_name']} - NIK: {$student['patient']['nik']}");
+            if (!$isAllSchool) {
 
-                    $patient = $this->setPatient($student);
-
-                    if (!empty($patient)) {
-                        $this->setScreening([...$patient, ...['register_date' => $student['register_date'], 'schoolCode' => $selectedSchool['ihs_no'], 'classCode' => $sc['code']]]);
-                    } else {
-                        $this->info("🔁 Skip. Data tidak lengkap.");
-                    }
-                    $c++;
-                    $this->newLine(1);
-                }
+                $selectedClasses = $this->choice(
+                    'Pilih Kelas: ',
+                    ['Pilih Semua', ...$schoolClasses->map(fn($item) => "{$item['code']} - {$item['name']}")->toArray()],
+                    0,
+                    null,
+                    true,
+                );
             }
 
-            $this->newLine(1);
-        }
+            if (in_array('Pilih Semua', $selectedClasses) || $isAllSchool) {
+                $selectedClasses = $schoolClasses->toArray();
+            } else {
+                $selectedClasses = $schoolClasses->filter(fn($item) => array_filter($selectedClasses, fn($isc) => str_starts_with($isc, $item['code'])))->toArray();
+            }
 
+
+            foreach ($selectedClasses as $sc) {
+                $this->info("➡️ Kelas: " . $sc['name']);
+
+                // $students = $this->getStudentsBySchoolId($selectedSchool['ihs_no'], $selectedClass['code'], 1)['data'][0];
+                $totalStudent = $this->getStudentsBySchoolId($ss['ihs_no'], $sc['code'], 1)['pagination']['total_data'];
+                $students = $this->getStudentsBySchoolId($ss['ihs_no'], $sc['code'], $totalStudent);
+
+                if (isset($students)) {
+                    $this->info("🧮 Total Siswa Selesai: " . $totalStudent);
+                    $c = 1;
+
+                    foreach ($students['data'] as $student) {
+                        $this->info("➡️ {$c}. {$student['patient']['full_name']} - NIK: {$student['patient']['nik']}");
+
+                        $patient = $this->setPatient($student);
+
+                        if (!empty($patient)) {
+                            $this->setScreening([...$patient, ...['register_date' => $student['register_date'], 'schoolCode' => $ss['ihs_no'], 'classCode' => $sc['code']]]);
+                        } else {
+                            $this->info("⚠️ Skip. Data tidak lengkap.");
+                        }
+                        $c++;
+                        $this->newLine(1);
+                    }
+                }
+
+                $this->newLine(1);
+            }
+        }
         $this->newLine(2);
     }
 
