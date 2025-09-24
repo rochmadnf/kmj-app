@@ -131,7 +131,7 @@ async function decryptRaporForKey(page, key) {
 
                 try {
                     const reqBody = JSON.stringify(parsed, null, 2);
-                    console.log(`Result: ${reqBody}`);
+                    // console.log(`Result: ${reqBody}`);
 
                     const dbResponse = await setToDB(reqBody);
 
