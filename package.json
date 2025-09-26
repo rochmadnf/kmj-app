@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "get:reports": "node node-app\\ckg\\get-report.js",
+        "get:reports_l": "node node-app/ckg/get-report.js",
         "dev": "vite"
     },
     "devDependencies": {
