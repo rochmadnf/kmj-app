@@ -11,5 +11,5 @@ Route::get('/', function () {
 
 Route::get('/report/export', function (Request $request) {
     $category = $request->has('s') ? $request->get('s') : 'SD';
-    return (new RaporExport($category))->download("{$category}_Rapor_CKG_Sekolah_" . time() . ".xlxs", Excel::XLSX);
+    return (new RaporExport($category))->download("{$category}_Rapor_CKG_Sekolah_" . time() . ".xlsx", Excel::XLSX);
 });
