@@ -44,10 +44,12 @@ class RaporExport implements FromQuery, ShouldAutoSize, WithProperties, WithHead
     {
         $s = [
             '#',
+            'Rapor',
             'Nama Siswa',
             'NIK',
             'Tanggal Lahir',
             'Umur',
+            'Jenis Kelamin',
             'Kelas',
             'Kelas Klaster',
             'Asal Sekolah',
@@ -95,10 +97,12 @@ class RaporExport implements FromQuery, ShouldAutoSize, WithProperties, WithHead
 
         return [
             $this->rowNumber,
+            '=HYPERLINK("https://pkg.kemkes.go.id/rapor?key='.$row->token_report.'&source=ckg-sekolah", "Lihat Rapor")',
             $row->patient->full_name,
             " " . (string) $row->patient->nik,
             $row->patient->born_date->translatedFormat('d M Y'),
             $row->patient->born_date->age,
+            (int) $row->patient->gender === 0 ? 'PEREMPUAN' : 'LAKI-LAKI',
             $row->class_name,
             $row->klaster_name,
             $row->school_name,
@@ -117,11 +121,11 @@ class RaporExport implements FromQuery, ShouldAutoSize, WithProperties, WithHead
     public function columnWidths(): array
     {
         return [
-            'A' => 8,
-            'B' => 50,
-            'C' => 18,
-            'D' => 15,
-            'E' => 5.5,
+            // 'A' => 8,
+            // 'B' => 50,
+            // 'C' => 18,
+            // 'D' => 15,
+            // 'E' => 5.5,
             // 'F' => 8,
             // 'G' => 15,
             // 'H' => 30,
